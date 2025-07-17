@@ -1,94 +1,187 @@
 <!DOCTYPE html>
-<html>
+<html lang="sv">
 <head>
-    <title>Bilvärme för hundar</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Djurtemperatur i bil | Skydda dina djur</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-        .result { margin-top: 20px; padding: 15px; border-radius: 5px; }
-        .high-risk { background-color: #ffcccc; border: 1px solid #ff0000; }
-        .danger { background-color: #ff0000; color: white; }
-        .low-risk { background-color: #ccffcc; border: 1px solid #00aa00; }
+        :root {
+            --primary: #4361ee;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --safe: #4cc9f0;
+            --dark: #212529;
+            --light: #f8f9fa;
+        }
+        
+        [data-theme="dark"] {
+            --primary: #4895ef;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --safe: #4cc9f0;
+            --dark: #f8f9fa;
+            --light: #212529;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color, #f5f7fa);
+            color: var(--text-color, #212529);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Resten av din CSS här... (behåll samma struktur som tidigare) */
+        
+        .theme-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+        
+        .theme-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .legal-info {
+            background-color: rgba(73, 80, 87, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            margin-top: 1rem;
+        }
     </style>
 </head>
 <body>
-    <h1>Beräkna bilens temperatur för din hund</h1>
+    <div class="theme-switcher">
+        <button class="theme-btn" id="theme-toggle">
+            <span id="theme-icon">🌙</span> <span id="theme-text">Mörkt tema</span>
+        </button>
+    </div>
     
-    <form id="calcForm">
-        <div>
-            <label>Ute-temperatur (°C):</label>
-            <input type="number" id="ambient_temp" step="0.1" required>
+    <div class="container">
+        <header>
+            <h1>Djurtemperatur i bil</h1>
+            <p class="subtitle">Skydda dina djur mot värmeslag - ta aldrig risken!</p>
+        </header>
+        
+        <div class="calculator-card">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="ambient_temp">Ute-temperatur (°C)</label>
+                    <div class="input-group">
+                        <input type="number" id="ambient_temp" step="0.1" placeholder="25" required>
+                        <select id="temp_preset" class="preset-select">
+                            <option value="">Välj förinställt...</option>
+                            <option value="15">15°C (Svalt)</option>
+                            <option value="20">20°C (Rumstemp)</option>
+                            <option value="25">25°C (Varmt)</option>
+                            <option value="30">30°C (Mycket varmt)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="sunlight_intensity">Solens intensitet</label>
+                    <select id="sunlight_intensity" required>
+                        <option value="1">Full sol ☀️</option>
+                        <option value="0.7">Lätt molnig ⛅</option>
+                        <option value="0.5">Halv solig 🌤</option>
+                        <option value="0.3">Molnigt ☁️</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="wind_speed">Vindstyrka</label>
+                    <select id="wind_speed">
+                        <option value="0">Vindstilla (0 m/s)</option>
+                        <option value="2">Lätt bris (2 m/s)</option>
+                        <option value="5">Måttlig vind (5 m/s)</option>
+                        <option value="10">Stark vind (10 m/s)</option>
+                    </select>
+                </div>
+                
+                <!-- Resten av formuläret... -->
+            </div>
+            
+            <button id="calculate-btn">Beräkna temperatur</button>
         </div>
         
-        <div>
-            <label>Solens intensitet (0-1, där 1 är full sol):</label>
-            <input type="number" id="sunlight_intensity" min="0" max="1" step="0.1" value="1" required>
-        </div>
+        <!-- Resultatkortet... -->
         
-        <div>
-            <label>Tid i minuter:</label>
-            <input type="number" id="minutes" min="1" required>
+        <div class="tips-section">
+            <h2>Tips för djurägare</h2>
+            <ul class="tips-list">
+                <li>Lämna aldrig ditt djur i en bil i varmt väder</li>
+                <li>Öppna aldrig bara fönstret på glänt - det räcker inte</li>
+                <li>Skugga hjälper, men temperaturen stiger fortfarande</li>
+                <li>Vid +20°C ute kan det bli +40°C i bilen på 30 minuter</li>
+                <li>Vid akut fara, ring 112 och försök få ut djuret</li>
+            </ul>
+            
+            <div class="legal-info" id="legal-info">
+                <h3>Vad säger lagen?</h3>
+                <p id="legal-text">Laddar laginformation...</p>
+            </div>
         </div>
-        
-        <div>
-            <label>Luftfuktighet (%):</label>
-            <input type="number" id="humidity" min="0" max="100" value="50">
-        </div>
-        
-        <div>
-            <label>Bilens färg:</label>
-            <select id="car_color">
-                <option value="dark">Mörk</option>
-                <option value="light">Ljus</option>
-            </select>
-        </div>
-        
-        <button type="submit">Beräkna temperatur</button>
-    </form>
-    
-    <div id="result" class="result" style="display: none;"></div>
-    
+    </div>
+
     <script>
-        document.getElementById('calcForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Temaväxlare
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const themeText = document.getElementById('theme-text');
+        
+        themeToggle.addEventListener('click', () => {
+            document.body.setAttribute('data-theme', 
+                document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
             
-            const data = {
-                ambient_temp: document.getElementById('ambient_temp').value,
-                sunlight_intensity: document.getElementById('sunlight_intensity').value,
-                minutes: document.getElementById('minutes').value,
-                humidity: document.getElementById('humidity').value,
-                car_color: document.getElementById('car_color').value
-            };
-            
-            try {
-                const response = await fetch('/calculate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    const resultDiv = document.getElementById('result');
-                    resultDiv.style.display = 'block';
-                    resultDiv.textContent = result.message;
-                    
-                    // Sätt riskklass
-                    resultDiv.className = 'result';
-                    if (result.risk_level.includes('FARLIGT')) {
-                        resultDiv.classList.add('danger');
-                    } else if (result.risk_level.includes('HÖG RISK')) {
-                        resultDiv.classList.add('high-risk');
-                    } else {
-                        resultDiv.classList.add('low-risk');
-                    }
-                } else {
-                    alert(`Error: ${result.error}`);
-                }
-            } catch (err) {
-                alert('Ett fel uppstod: ' + err.message);
+            if (document.body.getAttribute('data-theme') === 'dark') {
+                themeIcon.textContent = '☀️';
+                themeText.textContent = 'Ljust tema';
+            } else {
+                themeIcon.textContent = '🌙';
+                themeText.textContent = 'Mörkt tema';
             }
         });
+        
+        // Temperaturförinställningar
+        document.getElementById('temp_preset').addEventListener('change', function() {
+            if (this.value) {
+                document.getElementById('ambient_temp').value = this.value;
+            }
+        });
+        
+        // Uppdatera laginformation när resultat laddas
+        function updateLegalInfo(legalInfo) {
+            if (legalInfo) {
+                document.getElementById('legal-text').innerHTML = `
+                    <strong>${legalInfo.title}</strong><br>
+                    ${legalInfo.text}
+                `;
+            }
+        }
+        
+        // Resten av din JavaScript...
     </script>
 </body>
 </html>
