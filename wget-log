@@ -1,0 +1,24 @@
+--2025-07-17 05:53:48--  ftp://git@github.com/Lemonade455/car-temp-calc.git
+           => ‘car-temp-calc.git’
+Resolving github.com (github.com)... 140.82.121.4
+Connecting to github.com (github.com)|140.82.121.4|:21... failed: Connection timed out.
+Retrying.
+
+--2025-07-17 05:56:07--  ftp://git@github.com/Lemonade455/car-temp-calc.git
+  (try: 2) => ‘car-temp-calc.git’
+Connecting to github.com (github.com)|140.82.121.4|:21... failed: Connection timed out.
+Retrying.
+
+--2025-07-17 05:58:23--  ftp://git@github.com/Lemonade455/car-temp-calc.git
+  (try: 3) => ‘car-temp-calc.git’
+Connecting to github.com (github.com)|140.82.121.4|:21... failed: Connection timed out.
+Retrying.
+
+--2025-07-17 06:00:41--  ftp://git@github.com/Lemonade455/car-temp-calc.git
+  (try: 4) => ‘car-temp-calc.git’
+Connecting to github.com (github.com)|140.82.121.4|:21... failed: Connection timed out.
+Retrying.
+
+--2025-07-17 06:02:59--  ftp://git@github.com/Lemonade455/car-temp-calc.git
+  (try: 5) => ‘car-temp-calc.git’
+Connecting to github.com (github.com)|140.82.121.4|:21... 
