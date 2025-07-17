@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bilvärme för hundar</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 5px; }
+        .high-risk { background-color: #ffcccc; border: 1px solid #ff0000; }
+        .danger { background-color: #ff0000; color: white; }
+        .low-risk { background-color: #ccffcc; border: 1px solid #00aa00; }
+    </style>
+</head>
+<body>
+    <h1>Beräkna bilens temperatur för din hund</h1>
+    
+    <form id="calcForm">
+        <div>
+            <label>Ute-temperatur (°C):</label>
+            <input type="number" id="ambient_temp" step="0.1" required>
+        </div>
+        
+        <div>
+            <label>Solens intensitet (0-1, där 1 är full sol):</label>
+            <input type="number" id="sunlight_intensity" min="0" max="1" step="0.1" value="1" required>
+        </div>
+        
+        <div>
+            <label>Tid i minuter:</label>
+            <input type="number" id="minutes" min="1" required>
+        </div>
+        
+        <div>
+            <label>Luftfuktighet (%):</label>
+            <input type="number" id="humidity" min="0" max="100" value="50">
+        </div>
+        
+        <div>
+            <label>Bilens färg:</label>
+            <select id="car_color">
+                <option value="dark">Mörk</option>
+                <option value="light">Ljus</option>
+            </select>
+        </div>
+        
+        <button type="submit">Beräkna temperatur</button>
+    </form>
+    
+    <div id="result" class="result" style="display: none;"></div>
+    
+    <script>
+        document.getElementById('calcForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                ambient_temp: document.getElementById('ambient_temp').value,
+                sunlight_intensity: document.getElementById('sunlight_intensity').value,
+                minutes: document.getElementById('minutes').value,
+                humidity: document.getElementById('humidity').value,
+                car_color: document.getElementById('car_color').value
+            };
+            
+            try {
+                const response = await fetch('/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    const resultDiv = document.getElementById('result');
+                    resultDiv.style.display = 'block';
+                    resultDiv.textContent = result.message;
+                    
+                    // Sätt riskklass
+                    resultDiv.className = 'result';
+                    if (result.risk_level.includes('FARLIGT')) {
+                        resultDiv.classList.add('danger');
+                    } else if (result.risk_level.includes('HÖG RISK')) {
+                        resultDiv.classList.add('high-risk');
+                    } else {
+                        resultDiv.classList.add('low-risk');
+                    }
+                } else {
+                    alert(`Error: ${result.error}`);
+                }
+            } catch (err) {
+                alert('Ett fel uppstod: ' + err.message);
+            }
+        });
+    </script>
+</body>
+</html>

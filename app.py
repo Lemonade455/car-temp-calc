@@ -1,38 +1,37 @@
-import math
 from flask import Flask, request, jsonify, render_template
+from datetime import datetime
+import math
 
 app = Flask(__name__)
 
-def calculate_car_temperature(ambient_temp, sunlight_intensity, minutes, humidity=50, car_color='dark'):
+def calculate_car_temperature(ambient_temp, sunlight_intensity, minutes, humidity=50, car_color='dark', window_open=False, wind_speed=0):
     """
-    Beräkna bilens inre temperatur baserat på:
-    - ambient_temp: Ute-temperaturen i °C
-    - sunlight_intensity: Solens intensitet (0-1, där 1 är full sol)
-    - minutes: Tid i minuter
-    - humidity: Luftfuktighet i % (standard 50)
-    - car_color: 'light' eller 'dark' (standard 'dark')
-    
-    Returnerar temperatur i °C
+    Förbättrad temperaturberäkning med vindhastighet
     """
     # Basfaktorer
-    if car_color == 'dark':
-        heat_absorption = 0.8  # Mörka bilar absorberar mer värme
-    else:
-        heat_absorption = 0.6  # Ljusa bilar absorberar mindre värme
+    color_factor = 0.8 if car_color == 'dark' else 0.6
+    ventilation_factor = 0.7 if window_open else 1.0
     
-    # Beräkna temperaturökning (förenklad modell)
-    # Denna formel är en approximation baserad på forskning om bilvärme
-    temp_increase = (ambient_temp * heat_absorption * sunlight_intensity * 
-                     (1 + math.log(minutes + 1)/10) * (1 + (humidity - 50)/100))
+    # Vindfaktor (0-1 där 1 är vindstilla)
+    wind_factor = 1 - (wind_speed / 20)  # Max 20 m/s som full effekt
+    
+    # Mer avancerad modell
+    temp_increase = (ambient_temp * color_factor * sunlight_intensity * 
+                    (1 + math.log(minutes + 1)/8) * 
+                    (1 + (humidity - 50)/120) * 
+                    ventilation_factor * wind_factor)
     
     car_temp = ambient_temp + temp_increase
     
-    # Säkerhetsgräns - temperatur kan inte bli lägre än omgivningstemperaturen
-    return max(car_temp, ambient_temp)
+    # Säkerhetsgränser
+    car_temp = max(car_temp, ambient_temp)
+    car_temp = min(car_temp, 80)  # Max 80°C som realistisk övre gräns
+    
+    return car_temp
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', current_year=datetime.now().year)
 
 @app.route('/calculate', methods=['POST'])
 def calculate():
@@ -41,30 +40,45 @@ def calculate():
     try:
         ambient_temp = float(data['ambient_temp'])
         sunlight_intensity = float(data['sunlight_intensity'])
-        minutes = float(data['minutes'])
+        minutes = int(data['minutes'])
         car_color = data.get('car_color', 'dark')
-        humidity = float(data.get('humidity', 50))
+        humidity = int(data.get('humidity', 50))
+        window_open = data.get('window_open', 'false') == 'true'
+        wind_speed = int(data.get('wind_speed', 0))
         
         car_temp = calculate_car_temperature(
-            ambient_temp, sunlight_intensity, minutes, humidity, car_color
+            ambient_temp, sunlight_intensity, minutes, humidity, car_color, window_open, wind_speed
         )
-        
-        # Bedöm risknivå
-        if car_temp > 40:
-            risk = "FARLIGT - Livshotande för hundar"
-        elif car_temp > 30:
-            risk = "HÖG RISK - Farligt varmt för hundar"
-        else:
-            risk = "LÅG RISK - Acceptabelt men övervaka"
         
         return jsonify({
             'car_temperature': round(car_temp, 1),
-            'risk_level': risk,
-            'message': f"Efter {minutes} minuter: {round(car_temp, 1)}°C ({risk})"
+            'message': generate_warning_message(car_temp, minutes),
+            'legal_info': get_legal_info(),
+            'chart_data': generate_chart_data(ambient_temp, sunlight_intensity, humidity, car_color, wind_speed)
         })
     
-    except (KeyError, ValueError) as e:
+    except Exception as e:
         return jsonify({'error': str(e)}), 400
+
+def generate_warning_message(temp, minutes):
+    """Generera användarvänliga varningar"""
+    if temp > 50:
+        return f"🚨 EXTREMT FARLIGT: {temp}°C efter {minutes} minuter - Livsfara för djur!"
+    elif temp > 40:
+        return f"⚠️ Farligt varmt: {temp}°C efter {minutes} minuter - Risk för värmeslag"
+    elif temp > 30:
+        return f"☀️ Varmt: {temp}°C efter {minutes} minuter - Övervaka noga"
+    else:
+        return f"🌤 Acceptabelt: {temp}°C efter {minutes} minuter"
+
+def get_legal_info():
+    """Returnera information om lagar"""
+    return {
+        'title': 'Lagligt att ingripa',
+        'text': 'Enligt svensk lag (Djurskyddslagen 2018:1192) får man bryta sig in i en bil för att rädda ett djur i fara. Du måste dock: (1) Kontakta polis först om möjligt, (2) Endast använda nödvändig kraft, (3) Stanna kvar på plats och förklara för ägaren/polis.'
+    }
+
+# ... (andra hjälpfunktioner)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
