@@ -1,187 +1,397 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="sv" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Djurtemperatur i bil | Skydda dina djur</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>Biltemperatur Kalkylator | Skydda djur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --primary: #4361ee;
-            --danger: #f72585;
-            --warning: #f8961e;
-            --safe: #4cc9f0;
-            --dark: #212529;
-            --light: #f8f9fa;
-        }
-        
-        [data-theme="dark"] {
-            --primary: #4895ef;
-            --danger: #f72585;
-            --warning: #f8961e;
-            --safe: #4cc9f0;
-            --dark: #f8f9fa;
-            --light: #212529;
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-color: #e0e0e0;
-        }
-        
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--bg-color, #f5f7fa);
-            color: var(--text-color, #212529);
-            line-height: 1.6;
-            transition: all 0.3s ease;
+            transition: background-color 0.3s, color 0.3s;
         }
-        
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        
-        /* Resten av din CSS här... (behåll samma struktur som tidigare) */
-        
-        .theme-switcher {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
-        }
-        
-        .theme-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .legal-info {
-            background-color: rgba(73, 80, 87, 0.1);
-            border-left: 4px solid var(--primary);
-            padding: 1rem;
-            margin-top: 1rem;
+        .dark {
+            color-scheme: dark;
         }
     </style>
 </head>
-<body>
-    <div class="theme-switcher">
-        <button class="theme-btn" id="theme-toggle">
-            <span id="theme-icon">🌙</span> <span id="theme-text">Mörkt tema</span>
-        </button>
-    </div>
-    
-    <div class="container">
-        <header>
-            <h1>Djurtemperatur i bil</h1>
-            <p class="subtitle">Skydda dina djur mot värmeslag - ta aldrig risken!</p>
+<body class="h-full bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100">
+    <div class="min-h-full flex flex-col">
+        <!-- Header med temaknapp -->
+        <header class="sticky top-0 z-10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+            <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+                <h1 class="text-xl font-bold text-blue-600 dark:text-blue-400">Biltemperatur Kalkylator</h1>
+                <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <span id="theme-icon" class="text-lg">🌙</span>
+                </button>
+            </div>
         </header>
-        
-        <div class="calculator-card">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="ambient_temp">Ute-temperatur (°C)</label>
-                    <div class="input-group">
-                        <input type="number" id="ambient_temp" step="0.1" placeholder="25" required>
-                        <select id="temp_preset" class="preset-select">
-                            <option value="">Välj förinställt...</option>
-                            <option value="15">15°C (Svalt)</option>
-                            <option value="20">20°C (Rumstemp)</option>
-                            <option value="25">25°C (Varmt)</option>
-                            <option value="30">30°C (Mycket varmt)</option>
-                        </select>
+
+        <main class="flex-grow container mx-auto px-4 py-6">
+            <!-- Kalkylator -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6 border border-gray-200 dark:border-gray-700 transition-colors">
+                <h2 class="text-lg font-semibold mb-4">Beräkna temperatur</h2>
+                
+                <form id="calc-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="ambient_temp" class="block text-sm font-medium mb-1">Ute-temperatur (°C)</label>
+                            <input type="number" id="ambient_temp" step="0.1" placeholder="25" required
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        
+                        <div>
+                            <label for="sunlight_intensity" class="block text-sm font-medium mb-1">Solens intensitet</label>
+                            <select id="sunlight_intensity" required
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="1">Full sol ☀️</option>
+                                <option value="0.7">Lätt molnig ⛅</option>
+                                <option value="0.5">Halv solig 🌤</option>
+                                <option value="0.3">Molnigt ☁️</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                            <label for="wind_speed" class="block text-sm font-medium mb-1">Vindstyrka (m/s)</label>
+                            <input type="number" id="wind_speed" min="0" value="0"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <div>
+                            <label for="uv_index" class="block text-sm font-medium mb-1">UV-index</label>
+                            <select id="uv_index"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="0">0-2 (Låg)</option>
+                                <option value="3">3-5 (Måttlig)</option>
+                                <option value="6">6-7 (Hög)</option>
+                                <option value="8">8-10 (Mycket hög)</option>
+                                <option value="11">11+ (Extrem)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="minutes" class="block text-sm font-medium mb-1">Tid i minuter</label>
+                            <input type="number" id="minutes" min="1" placeholder="30" required
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                            <label for="humidity" class="block text-sm font-medium mb-1">Luftfuktighet (%)</label>
+                            <input type="number" id="humidity" min="0" max="100" value="50"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <div>
+                            <label for="car_color" class="block text-sm font-medium mb-1">Bilens färg</label>
+                            <select id="car_color"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="dark">Mörk</option>
+                                <option value="light">Ljus</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center justify-center md:justify-start pt-5">
+                            <input type="checkbox" id="window_open"
+                                class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700">
+                            <label for="window_open" class="ml-2 block text-sm">Fönster på glänt</label>
+                        </div>
+                    </div>
+
+                    <!-- Platstjänst-knapp -->
+                    <div>
+                        <button type="button" id="location-btn"
+                            class="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                            </svg>
+                            Använd min plats för väderdata
+                        </button>
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit" id="calculate-btn"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-all transform hover:scale-[1.01]">
+                            Beräkna temperatur
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Resultat -->
+            <div id="result-card" class="hidden bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6 border border-gray-200 dark:border-gray-700 transition-colors">
+                <h2 class="text-xl font-bold text-center mb-4">Resultat</h2>
+
+                <div class="text-center my-6">
+                    <div class="text-5xl font-bold text-blue-600 dark:text-blue-400" id="temperature-display">
+                        --<span class="text-3xl">°C</span>
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        Efter <span id="minutes-display">0</span> minuter
+                        <span class="block text-xs mt-1">(Beräknad spann: <span id="temp-range">-- till --°C</span>)</span>
                     </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="sunlight_intensity">Solens intensitet</label>
-                    <select id="sunlight_intensity" required>
-                        <option value="1">Full sol ☀️</option>
-                        <option value="0.7">Lätt molnig ⛅</option>
-                        <option value="0.5">Halv solig 🌤</option>
-                        <option value="0.3">Molnigt ☁️</option>
-                    </select>
+
+                <!-- Temperaturdiagram -->
+                <div class="mt-6 h-64">
+                    <canvas id="temperature-chart"></canvas>
                 </div>
-                
-                <div class="form-group">
-                    <label for="wind_speed">Vindstyrka</label>
-                    <select id="wind_speed">
-                        <option value="0">Vindstilla (0 m/s)</option>
-                        <option value="2">Lätt bris (2 m/s)</option>
-                        <option value="5">Måttlig vind (5 m/s)</option>
-                        <option value="10">Stark vind (10 m/s)</option>
-                    </select>
+
+                <div id="warning-message" class="text-center text-lg font-semibold mb-6 p-3 rounded-lg"></div>
+
+                <!-- Platsinformation -->
+                <div id="location-info" class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hidden">
+                    <h3 class="font-medium mb-1">Platsinformation</h3>
+                    <p id="location-text" class="text-sm"></p>
                 </div>
+
+                <div class="p-3 bg-red-50 dark:bg-gray-700 border border-red-200 dark:border-gray-600 rounded-lg">
+                    <p class="text-sm text-red-700 dark:text-red-300">
+                        Denna beräkning är endast en uppskattning (±5°C). Faktisk temperatur kan variera. Vid oro, ring 112 vid akut fara.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Information -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700 transition-colors">
+                <h2 class="text-xl font-bold mb-3">Vad göra om du ser ett djur i varm bil</h2>
                 
-                <!-- Resten av formuläret... -->
+                <ol class="list-decimal pl-5 space-y-2 mb-4">
+                    <li>Kontrollera om bildörren är öppen</li>
+                    <li>Ring <strong>112</strong> vid akut fara, annars <strong>114 14</strong></li>
+                    <li>Notera registreringsnummer och tidpunkt</li>
+                    <li>Vid nödfall: Krossa rutan (välj ruta längst från djuret)</li>
+                </ol>
+                
+                <div class="p-3 bg-blue-50 dark:bg-gray-700 rounded-lg">
+                    <h3 class="font-semibold mb-1">Juridisk information</h3>
+                    <p class="text-sm">
+                        Enligt <strong>24 kap 4 § brottsbalken</strong> får du bryta dig in för att rädda ett djur i fara. Var beredd att identifiera dig.
+                    </p>
+                </div>
             </div>
-            
-            <button id="calculate-btn">Beräkna temperatur</button>
-        </div>
-        
-        <!-- Resultatkortet... -->
-        
-        <div class="tips-section">
-            <h2>Tips för djurägare</h2>
-            <ul class="tips-list">
-                <li>Lämna aldrig ditt djur i en bil i varmt väder</li>
-                <li>Öppna aldrig bara fönstret på glänt - det räcker inte</li>
-                <li>Skugga hjälper, men temperaturen stiger fortfarande</li>
-                <li>Vid +20°C ute kan det bli +40°C i bilen på 30 minuter</li>
-                <li>Vid akut fara, ring 112 och försök få ut djuret</li>
-            </ul>
-            
-            <div class="legal-info" id="legal-info">
-                <h3>Vad säger lagen?</h3>
-                <p id="legal-text">Laddar laginformation...</p>
-            </div>
-        </div>
+        </main>
+
+        <footer class="py-4 text-center text-sm text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
+            <p>© <span id="current-year"></span> Biltemperatur Kalkylator | Skapad för att skydda djur</p>
+        </footer>
     </div>
 
     <script>
-        // Temaväxlare
-        const themeToggle = document.getElementById('theme-toggle');
-        const themeIcon = document.getElementById('theme-icon');
-        const themeText = document.getElementById('theme-text');
-        
-        themeToggle.addEventListener('click', () => {
-            document.body.setAttribute('data-theme', 
-                document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sätt aktuellt år
+            document.getElementById('current-year').textContent = new Date().getFullYear();
             
-            if (document.body.getAttribute('data-theme') === 'dark') {
+            // Initiera diagram
+            const ctx = document.getElementById('temperature-chart').getContext('2d');
+            let tempChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Uppskattad temperatur (°C)',
+                        data: [],
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Temperatur (°C)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Tid (minuter)'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Temahantering
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+            
+            const savedTheme = localStorage.getItem('theme');
+            const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme === 'dark' || (!savedTheme && systemDark)) {
+                document.documentElement.classList.add('dark');
                 themeIcon.textContent = '☀️';
-                themeText.textContent = 'Ljust tema';
-            } else {
-                themeIcon.textContent = '🌙';
-                themeText.textContent = 'Mörkt tema';
+            }
+            
+            themeToggle.addEventListener('click', () => {
+                document.documentElement.classList.toggle('dark');
+                const isDark = document.documentElement.classList.contains('dark');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                themeIcon.textContent = isDark ? '☀️' : '🌙';
+            });
+
+            // Platstjänst
+            document.getElementById('location-btn').addEventListener('click', function() {
+                if (navigator.geolocation) {
+                    const btn = this;
+                    btn.disabled = true;
+                    btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Hämtar plats...';
+
+                    navigator.geolocation.getCurrentPosition(
+                        position => {
+                            const locationInfo = document.getElementById('location-info');
+                            const locationText = document.getElementById('location-text');
+                            
+                            locationText.textContent = `Position: ${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`;
+                            locationInfo.classList.remove('hidden');
+                            
+                            // Hämta väderdata från backend
+                            fetch('/get_weather', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    latitude: position.coords.latitude,
+                                    longitude: position.coords.longitude
+                                })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    const w = data.weather;
+                                    document.getElementById('ambient_temp').value = w.temp.toFixed(1);
+                                    document.getElementById('humidity').value = w.humidity;
+                                    document.getElementById('wind_speed').value = w.wind_speed.toFixed(1);
+                                    document.getElementById('sunlight_intensity').value = (1 - w.clouds).toFixed(1);
+                                }
+                            })
+                            .finally(() => {
+                                btn.disabled = false;
+                                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg> Använd min plats för väderdata';
+                            });
+                        },
+                        error => {
+                            alert("Platstjänst krävs för automatisk väderhämtning. Ange manuellt istället.");
+                            btn.disabled = false;
+                            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg> Använd min plats för väderdata';
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        }
+                    );
+                } else {
+                    alert("Platstjänst stöds inte av din webbläsare");
+                }
+            });
+
+            // Formulärhantering
+            document.getElementById('calc-form').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const btn = document.getElementById('calculate-btn');
+                btn.disabled = true;
+                btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Beräknar...';
+                
+                try {
+                    const data = {
+                        ambient_temp: document.getElementById('ambient_temp').value,
+                        sunlight_intensity: document.getElementById('sunlight_intensity').value,
+                        minutes: document.getElementById('minutes').value,
+                        humidity: document.getElementById('humidity').value,
+                        car_color: document.getElementById('car_color').value,
+                        window_open: document.getElementById('window_open').checked,
+                        wind_speed: document.getElementById('wind_speed').value,
+                        uv_index: document.getElementById('uv_index').value
+                    };
+                    
+                    const response = await fetch('/calculate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        const resultCard = document.getElementById('result-card');
+                        resultCard.classList.remove('hidden');
+                        
+                        // Uppdatera temperaturdisplay
+                        document.getElementById('temperature-display').innerHTML = 
+                            `${result.car_temperature}<span class="text-3xl">°C</span>`;
+                        document.getElementById('minutes-display').textContent = data.minutes;
+                        document.getElementById('temp-range').textContent = 
+                            `${result.temperature_range.min} till ${result.temperature_range.max}°C`;
+                        
+                        // Uppdatera varningsmeddelande
+                        const warningMsg = document.getElementById('warning-message');
+                        warningMsg.textContent = result.message;
+                        
+                        // Sätt färg baserat på temperatur
+                        warningMsg.className = 'text-center text-lg font-semibold mb-6 p-3 rounded-lg ';
+                        if (result.message.includes('EXTREMT')) {
+                            warningMsg.classList.add('bg-red-100', 'text-red-800', 'dark:bg-red-900/20', 'dark:text-red-300');
+                        } else if (result.message.includes('Farligt')) {
+                            warningMsg.classList.add('bg-orange-100', 'text-orange-800', 'dark:bg-orange-900/20', 'dark:text-orange-300');
+                        } else if (result.message.includes('Varmt')) {
+                            warningMsg.classList.add('bg-yellow-100', 'text-yellow-800', 'dark:bg-yellow-900/20', 'dark:text-yellow-300');
+                        } else {
+                            warningMsg.classList.add('bg-green-100', 'text-green-800', 'dark:bg-green-900/20', 'dark:text-green-300');
+                        }
+                        
+                        // Uppdatera diagrammet
+                        updateTemperatureChart(tempChart, data.minutes, result.car_temperature, result.temperature_range);
+                        
+                        // Scrolla till resultat
+                        resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                        alert('Ett fel uppstod: ' + (result.error || 'Okänt fel'));
+                    }
+                } catch (err) {
+                    alert('Ett fel uppstod: ' + err.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Beräkna temperatur';
+                }
+            });
+
+            // Funktion för att uppdatera diagrammet
+            function updateTemperatureChart(chart, minutes, temp, range) {
+                const timePoints = [];
+                const tempPoints = [];
+                
+                // Skapa datapunkter för var 5:e minut
+                for (let i = 0; i <= minutes; i += 5) {
+                    timePoints.push(i);
+                    // Linjär interpolation mellan omgivningstemp och sluttemp
+                    const progress = Math.min(i / minutes, 1);
+                    const currentTemp = (temp - parseFloat(document.getElementById('ambient_temp').value)) * progress + 
+                                        parseFloat(document.getElementById('ambient_temp').value);
+                    tempPoints.push(currentTemp.toFixed(1));
+                }
+                
+                // Lägg till sista minuten om den inte redan finns
+                if (timePoints[timePoints.length - 1] !== minutes) {
+                    timePoints.push(minutes);
+                    tempPoints.push(temp.toFixed(1));
+                }
+                
+                chart.data.labels = timePoints;
+                chart.data.datasets[0].data = tempPoints;
+                chart.update();
             }
         });
-        
-        // Temperaturförinställningar
-        document.getElementById('temp_preset').addEventListener('change', function() {
-            if (this.value) {
-                document.getElementById('ambient_temp').value = this.value;
-            }
-        });
-        
-        // Uppdatera laginformation när resultat laddas
-        function updateLegalInfo(legalInfo) {
-            if (legalInfo) {
-                document.getElementById('legal-text').innerHTML = `
-                    <strong>${legalInfo.title}</strong><br>
-                    ${legalInfo.text}
-                `;
-            }
-        }
-        
-        // Resten av din JavaScript...
     </script>
 </body>
 </html>

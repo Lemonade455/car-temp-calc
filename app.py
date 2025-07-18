@@ -1,84 +1,67 @@
 from flask import Flask, request, jsonify, render_template
 from datetime import datetime
 import math
+from geopy.geocoders import Nominatim
 
 app = Flask(__name__)
+geolocator = Nominatim(user_agent="car_temp_calc")
 
-def calculate_car_temperature(ambient_temp, sunlight_intensity, minutes, humidity=50, car_color='dark', window_open=False, wind_speed=0):
-    """
-    Förbättrad temperaturberäkning med vindhastighet
-    """
-    # Basfaktorer
-    color_factor = 0.8 if car_color == 'dark' else 0.6
-    ventilation_factor = 0.7 if window_open else 1.0
-    
-    # Vindfaktor (0-1 där 1 är vindstilla)
-    wind_factor = 1 - (wind_speed / 20)  # Max 20 m/s som full effekt
-    
-    # Mer avancerad modell
-    temp_increase = (ambient_temp * color_factor * sunlight_intensity * 
-                    (1 + math.log(minutes + 1)/8) * 
-                    (1 + (humidity - 50)/120) * 
-                    ventilation_factor * wind_factor)
-    
-    car_temp = ambient_temp + temp_increase
-    
-    # Säkerhetsgränser
-    car_temp = max(car_temp, ambient_temp)
-    car_temp = min(car_temp, 80)  # Max 80°C som realistisk övre gräns
-    
-    return car_temp
+def calculate_car_temp(ambient_temp, sun_intensity, minutes, humidity=50, car_color='dark', window_open=False, wind_speed=0, uv_index=0):
+    """Calculate estimated car temperature"""
+    try:
+        color_factor = 0.8 if car_color == 'dark' else 0.6
+        ventilation = 0.7 if window_open else 1.0
+        uv_factor = 1 + (uv_index / 10)
+        wind_factor = max(0.5, 1 - (wind_speed / 20))
+        
+        temp_rise = (ambient_temp * color_factor * sun_intensity * uv_factor * 
+                   (1 + math.log(minutes + 1)/8) * 
+                   (1 + (humidity - 50)/120) * 
+                   ventilation * wind_factor)
+        
+        return round(max(ambient_temp, min(ambient_temp + temp_rise, 80)), 1)
+    except Exception:
+        return ambient_temp
 
 @app.route('/')
-def index():
-    return render_template('index.html', current_year=datetime.now().year)
+def home():
+    return render_template('index.html', year=datetime.now().year)
 
-@app.route('/calculate', methods=['POST'])
-def calculate():
-    data = request.get_json()
-    
+@app.route('/get_weather', methods=['POST'])
+def get_weather():
+    # https://ensemble-api.open-meteo.com/v1/ensemble?latitude=61.007&longitude=14.5432&daily=temperature_2m_mean,temperature_2m_min,temperature_2m_max,apparent_temperature_mean,apparent_temperature_min,apparent_temperature_max,wind_speed_10m_mean,wind_speed_10m_min,wind_speed_10m_max,wind_direction_10m_dominant,wind_gusts_10m_mean,wind_gusts_10m_min,wind_gusts_10m_max,cloud_cover_mean,cloud_cover_max,cloud_cover_min,precipitation_sum,precipitation_hours,rain_sum,pressure_msl_min,pressure_msl_mean,pressure_msl_max&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation,rain,weather_code,cloud_cover,surface_pressure,pressure_msl,wind_speed_10m,wind_speed_80m,wind_direction_10m,wind_direction_80m,wind_gusts_10m,temperature_80m&models=icon_seamless&past_days=7
+    pass
+
+@app.route('/api/calculate', methods=['POST'])
+def api_calculate():
     try:
-        ambient_temp = float(data['ambient_temp'])
-        sunlight_intensity = float(data['sunlight_intensity'])
-        minutes = int(data['minutes'])
-        car_color = data.get('car_color', 'dark')
-        humidity = int(data.get('humidity', 50))
-        window_open = data.get('window_open', 'false') == 'true'
-        wind_speed = int(data.get('wind_speed', 0))
+        data = request.json
+        temp = float(data.get('temp', 20))
+        sun = float(data.get('sun', 1))
+        mins = int(data.get('mins', 30))
         
-        car_temp = calculate_car_temperature(
-            ambient_temp, sunlight_intensity, minutes, humidity, car_color, window_open, wind_speed
+        result = calculate_car_temp(
+            temp, sun, mins,
+            humidity=int(data.get('humidity', 50)),
+            car_color=data.get('color', 'dark'),
+            window_open=data.get('window', 'false') == 'true',
+            wind_speed=int(data.get('wind', 0)),
+            uv_index=int(data.get('uv', 0))
         )
         
         return jsonify({
-            'car_temperature': round(car_temp, 1),
-            'message': generate_warning_message(car_temp, minutes),
-            'legal_info': get_legal_info(),
-            'chart_data': generate_chart_data(ambient_temp, sunlight_intensity, humidity, car_color, wind_speed)
+            'temp': result[0],
+            'range': (max(result[0]-5, temp), min(result[0]+5, 80)),
+            'warning': get_warning(result[0], mins)
         })
-    
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-def generate_warning_message(temp, minutes):
-    """Generera användarvänliga varningar"""
-    if temp > 50:
-        return f"🚨 EXTREMT FARLIGT: {temp}°C efter {minutes} minuter - Livsfara för djur!"
-    elif temp > 40:
-        return f"⚠️ Farligt varmt: {temp}°C efter {minutes} minuter - Risk för värmeslag"
-    elif temp > 30:
-        return f"☀️ Varmt: {temp}°C efter {minutes} minuter - Övervaka noga"
-    else:
-        return f"🌤 Acceptabelt: {temp}°C efter {minutes} minuter"
-
-def get_legal_info():
-    """Returnera information om lagar"""
-    return {
-        'title': 'Lagligt att ingripa',
-        'text': 'Enligt svensk lag (Djurskyddslagen 2018:1192) får man bryta sig in i en bil för att rädda ett djur i fara. Du måste dock: (1) Kontakta polis först om möjligt, (2) Endast använda nödvändig kraft, (3) Stanna kvar på plats och förklara för ägaren/polis.'
-    }
-
-# ... (andra hjälpfunktioner)
+def get_warning(temp, mins):
+    if temp > 50: return "EXTREMT FARLIGT! Ring 112 omedelbart"
+    elif temp > 40: return "Farligt varmt - Risk för värmeslag"
+    elif temp > 30: return "Varmt - Övervaka noga"
+    return "Acceptabelt men kan fortfarande vara riskabelt"
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
